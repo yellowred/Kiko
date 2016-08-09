@@ -32,11 +32,9 @@ refer to the giants and their experience:
 
 The version of Node.js which is used in this article is 6.2.1:
 
-```
-
+``` bash
   $ node --version
   v6.2.1
-
 ```
 
 ## Why LDAP?
@@ -70,7 +68,8 @@ Ok, let's begin coding!
 To begin with, we need to establish connection to OpenLDAP, after that we can start send and receive messages. Communication with OpenLDAP works in session essentialy in contrast with RESTful API that we are building.
 
 We will connect using these few lines of code:
-```
+
+``` javascript
 const ldapOptions = {
   url: ldapConfig.url,
   timeout: ldapConfig.timeout,
@@ -84,6 +83,7 @@ As I already mentioned, LDAP fundamentally sessional and synchronous software an
 
 ### Registration
 On this step we will add a user to an LDAP Directory. Let's consider this code snippet:
+
 ``` javascript
 module.exports.addUser = (userId, givenName, familyName, password) => {
   return new Promise((resolve, reject) => {
@@ -116,11 +116,13 @@ module.exports.addUser = (userId, givenName, familyName, password) => {
   });
 }
 ```
+
 To begin with, wrap your code with Promise, because ldapjs uses callbacks and can't be promisified automatically. Take in account that ldapjs uses Sockets at the backend and Sockets use EventEmitter to return results. In real life this means ldapjs.bind() will return true instantly and callback will be called later. So make sure that you resolve your promise explicitly calling Promise.resolve() inside your callback (for example, Bluebird.try() is not suitable as it does not require explicit resolve).
 
 Step 1. We build new client object to communicate with LDAP server. In turn ldapjs opens socket, establishes connection and add it to a pool.
 
 This operation does not use callbacks and all errors will be emited as events. You can catch 'em all using the code below:
+
 ``` javascript
 ldapClient.on('error', function (err) {
   if (err.syscall == "connect") {
@@ -128,6 +130,7 @@ ldapClient.on('error', function (err) {
   }
 });
 ```
+
 Accordingly while developing centralized logging sub-system it is important to consider these to methods of error delivering.
 
 Step 2. [bind](https://www.ldap.com/the-ldap-bind-operation) operation is performed, which authenticate a user in LDAP server and establishes priveleged session. As we create a new user we should authenticate as a user administrator. After that our session wil have a right to add record to a directory.
@@ -141,6 +144,7 @@ To add a user we specify DN [Distingueshed Name](https://msdn.microsoft.com/en-u
 You may notice that we do not unbind after the end of transaction. It is perfectly OK and not a bug as it will not cause any issues with OpenLDAP and connection is managed for you by ldapjs. You may test it and notice that unbind will not close the connection for you, nor do any other finishing activity. However it is a good idea to unbind to release OpenLDAP resources.
 
 ### Authentication
+
 ``` javascript
 module.exports.authenticate = (userId, password) => {
   return new Promise((resolve, reject) => {
@@ -157,10 +161,12 @@ module.exports.authenticate = (userId, password) => {
   }
 };
 ```
+
 As usual we use Promises and do bind inside to establish priveleged session with specified login and password. If it was successful and a the login-password pair was correct then the promise will be resolved otherwise it will be rejected.
 
 ### Change password
 To modify existing records we need to build a special object Change in which we will incapsulate operation name and fields with new values that we want to update.
+
 ``` javascript
 module.exports.changePassword = (userId, passwordOld, passwordNew) => {
   return new Promise((resolve, reject) => {
@@ -190,6 +196,7 @@ module.exports.changePassword = (userId, passwordOld, passwordNew) => {
   }
 }
 ```
+
 As this operation is meant to be done by a user to change her own password it is supposed that an old password is known. Therefore at first we prove this to be true binding the user (step 1) and as result establishing a session with priveledge to modify the password.
 
 On the step 2 we create modification object in which we specify operation replace. This operation does not require us to specify old password in Change object as we already know that it is correct because of the bind above. Other option is to user operation 'modify' which will give responsibility to check old password to OpenLDAP. Either case or Change object will be trasformed by ldapjs to a message to LDAP server and if it will be successful in the end we will have a fullfilled promise.
@@ -198,6 +205,7 @@ If a user forgot her password then it is impossible for her to authenticate so t
 
 ### Retrieve
 And finally let's end our module with search records method which may be helpful for administration purposes.
+
 ``` javascript
 module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
   return new Promise((resolve, reject) => {
@@ -236,6 +244,7 @@ module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
   });
 }
 ```
+
 So after creating a client we bind as a manager user (step 1) to gain priveleges to access all records in directory (regular users can acceess to only their own record).
 
 Step 2 - we construct a search options object (please refer to
