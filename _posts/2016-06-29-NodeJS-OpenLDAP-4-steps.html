@@ -9,16 +9,6 @@ as a backend. Let's see how modern software can collaborate with old-school
 systems.
 </p>
 
-
-``` javascript
-function trigger_alert(){
-  alert("Lorem Ipsum dolor sit amet");
-}
-
-trigger_alert();
-```
-
-
 ## Why NodeJS?
 
 Node.js is the best bet if you are going to create SaaS because it is easy in development,
@@ -141,7 +131,7 @@ Step 3. Add new user to a server. Depending on your OpenLDAP schema for objectCl
 
 pwdPolicySubentry will keep a link to a record of objectClass pwdPolicy containing a list of password policy rules, such as password history, lockout, min length, etc. Actual password will be stored in a field designated by an actual policy. In our case it is userPassword.
 
-To add a user we specify DN [Distingueshed Name](https://msdn.microsoft.com/en-us/library/aa366101(v=vs.85).aspx) and a dictionary with pairs attribute:value. Empty err in callback cause fulfill promise.
+To add a user we specify DN [Distinguished Name](https://msdn.microsoft.com/en-us/library/aa366101(v=vs.85).aspx) and a dictionary with pairs attribute:value. Empty err in callback cause fulfill promise.
 
 You may notice that we do not unbind after the end of transaction. It is perfectly OK and not a bug as it will not cause any issues with OpenLDAP and connection is managed for you by ldapjs. You may test it and notice that unbind will not close the connection for you, nor do any other finishing activity. However it is a good idea to unbind to release OpenLDAP resources.
 
