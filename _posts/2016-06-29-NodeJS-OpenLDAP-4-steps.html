@@ -22,8 +22,10 @@ refer to the giants and their experience:
 
 The version of Node.js which is used in this article is 6.2.1:
 ```
-$ node --version
-v6.2.1
+
+  $ node --version
+  v6.2.1
+
 ```
 
 ## Why LDAP?
@@ -57,7 +59,7 @@ Ok, let's begin coding!
 To begin with, we need to establish connection to OpenLDAP, after that we can start send and receive messages. Communication with OpenLDAP works in session essentialy in contrast with RESTful API that we are building.
 
 We will connect using these few lines of code:
-``` 
+```
 const ldapOptions = {
   url: ldapConfig.url,
   timeout: ldapConfig.timeout,
