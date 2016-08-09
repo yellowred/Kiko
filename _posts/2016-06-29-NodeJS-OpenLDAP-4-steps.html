@@ -9,8 +9,7 @@ as a backend. Let's see how modern software can collaborate with old-school
 systems.
 </p>
 
-Why NodeJS?
-==================
+## Why NodeJS?
 
 Node.js is the best bet if you are going to create SaaS because it is easy in development,
 fast in production, requires less resources and provides efficient solutions.
@@ -27,31 +26,30 @@ $ node --version
 v6.2.1
 ```
 
-### Why LDAP?
+## Why LDAP?
 LDAP is secure, reliable and wide spread protocol for storing user directory and
 organizing single sign on point. It is supported by abundance of applications
 and operating systems. Moreover defacto it is a standard in enterprise world.
 These all makes it perfect backend solution for our project. To be more accurate –
 not only protocol but storage software which implements it – OpenLDAP server.
 
-### Environment
+## Environment
 
-#### OpenShift
 How many developers do we need for our Node.js+OpenLDAP project? If we had chosen
 Java it would have been taken 20 developers, database administrators and systems
 administrator to complete the project. But for us all we need is one full-stack
 developer who also has DevOps among the skills. And we will spend less on deployment and more on delivering so OpenShift, with it's great Pods and Images abstractions, is an excellent choise for us. However there are limitations. For example OpenLDAP image (I use [osixia](https://github.com/osixia/docker-openldap) image which can be forked and easily tweaked with cusom LDIFs) can not be deployed to OpenShift because it requires root priveleges to be installed. There are projects to hack this but unfortunately they are still not production ready.
 
-### Starting development
+## Starting development
 
-#### Scope
+### Scope
 In this project we will implemement these services:
 - registration
 - authentification
 - change password
 - retireve users
 
-#### Implementation
+### Implementation
 Firstly, it is important to understand that to communicate with OpenLDAP server node.js service have to send text messages over TCP using sockets. Sockets management is not a job that can be easily done in any language and node.js is not an exclusion. So do not reinvent the weel and jump stright to open source solutions. My personal favorite is [ldapjs](https://github.com/mcavage/node-ldapjs)
 created by former Joyent vice president of engineering Mark Cavage. Mark now works for Oracle and Joyent is a part of Samsung. So big names here. Apart from this ldapjs is most capable solution in open source team.
 
@@ -71,7 +69,7 @@ const ldapClient = ldapjs.createClient(ldapOptions);
 
 As I already mentioned, LDAP fundamentally sessional and synchronous software and it is so old so it can't bear multithreading properly, whereas Node.js is asynchronous thanks to [libuv](https://github.com/libuv/libuv). You can learn more about multithreaded clients to LDAP [here](http://home.ust.hk/~ccyflai/ldapsdk10/docs/threaded.htm#996824) and I will just mention that client shall not mix several sessions in one connection. Ldapjs solves this problem for us (that is why I love it) and we required only to relax, drink some puerh tea and do not try to reuse client object created by ldapjs module in different endpoints. Just always create new one.
 
-#### Registration
+### Registration
 On this step we will add a user to an LDAP Directory. Let's consider this code snippet:
 ```
 module.exports.addUser = (userId, givenName, familyName, password) => {
@@ -129,7 +127,7 @@ To add a user we specify DN [Distingueshed Name](https://msdn.microsoft.com/en-u
 
 You may notice that we do not unbind after the end of transaction. It is perfectly OK and not a bug as it will not cause any issues with OpenLDAP and connection is managed for you by ldapjs. You may test it and notice that unbind will not close the connection for you, nor do any other finishing activity. However it is a good idea to unbind to release OpenLDAP resources.
 
-#### Authentication
+### Authentication
 ```
 module.exports.authenticate = (userId, password) => {
   return new Promise((resolve, reject) => {
@@ -148,7 +146,7 @@ module.exports.authenticate = (userId, password) => {
 ```
 As usual we use Promises and do bind inside to establish priveleged session with specified login and password. If it was successful and a the login-password pair was correct then the promise will be resolved otherwise it will be rejected.
 
-#### Change password
+### Change password
 To modify existing records we need to build a special object Change in which we will incapsulate operation name and fields with new values that we want to update.
 ```
 module.exports.changePassword = (userId, passwordOld, passwordNew) => {
@@ -185,7 +183,7 @@ On the step 2 we create modification object in which we specify operation replac
 
 If a user forgot her password then it is impossible for her to authenticate so the code should be executed using secure context of a third party who has priveleges to change password, i.e. user admin account. All remain logic stays the same. Just one thing to keep in mind – it is discouraged to use RootDN for this operation for a few reasons and one of them it will not affect password policy history rule, which means new password can be the same as previous even if you define a rule to not create same passwords.
 
-#### Retrieve
+### Retrieve
 And finally let's end our module with search records method which may be helpful for administration purposes.
 ```
 module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
@@ -233,5 +231,5 @@ for documentation). Please note how we specify here hidden system fields so they
 
 Step 3 - getting search results in a stream fashion. This is the nature of OpenLDAP – not an atomic response but a stream of data chunks that should be collected and stored.
 
-### Conclusion
+## Conclusion
 OpenLDAP is old and it is as bad as good. It seems complicated and intricate for new comers, requires some learning curve to be passed, has some restrictions related to obsolete architecture and data model. From the other hand it is simple and robust for advanced users, workhorse in enterprise systems where it is required enhanced security and connect from variety of software. It seems that it still in a game even with modern players.
