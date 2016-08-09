@@ -228,7 +228,12 @@ module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
 
         // 2
         let options = {
-          attributes: ["cn", "createTimestamp", "modifyTimestamp", "pwdPolicySubentry"],
+          attributes: [
+            "cn",
+            "createTimestamp",
+            "modifyTimestamp",
+            "pwdPolicySubentry"
+          ],
           scope: "sub",
           filter: "(objectClass=person)"
         };
