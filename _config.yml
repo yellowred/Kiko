@@ -3,14 +3,14 @@
 # # # # # # # #
 
 # Basic
-name:               "Kiko"
-description:        "a clean, lightweight and minimalistic blog theme for jekyll"
+name:               "Oleg's short stories"
+description:        "on software, programming and devices."
 
 # jekyll-seo-tag, see: http://www.rubydoc.info/gems/jekyll-seo-tag/1.2.0
-url:                "//kiko.gfjaru.com"
-author:             "gfjaru"
+url:                "yellowred.github.io"
+author:             "yellowred"
 twitter:
-  username:         "gfjaru"
+  username:         "yellowred26"
 #facebook:
 #  app_id:           1234
 #    publisher:      1234

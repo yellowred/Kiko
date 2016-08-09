@@ -1,0 +1,233 @@
+# NodeJS authentication and user management with OpenLDAP in 5 simple steps
+
+In this article we will write a node.js module which will provide
+registration, authentication and password management services with OpenLDAP
+as a backend. Let's see how modern software can collaborate with old-school
+systems.
+
+
+### Why NodeJS?
+
+Node.js is the best bet if you are going to create SaaS because it is easy in development,
+fast in production, requires less resources and provides efficient solutions.
+The price will be scarce in structures variety, messy variable types,
+lack of available abstractions and 100 and 1 way to shoot yourself in the foot.
+Anyway Node.js delivers great results in specific field – building APIs. And we can
+refer to the giants and their experience:
+- [Node.js at PayPal](https://www.paypal-engineering.com/2013/11/22/node-js-at-paypal/)
+- [LinkedIn moved to Node.js](http://highscalability.com/blog/2012/10/4/linkedin-moved-from-rails-to-node-27-servers-cut-and-up-to-2.html)
+
+The version of Node.js which is used in this article is 6.2.1:
+```
+$ node --version
+v6.2.1
+```
+
+### Why LDAP?
+LDAP is secure, reliable and wide spread protocol for storing user directory and
+organizing single sign on point. It is supported by abundance of applications
+and operating systems. Moreover defacto it is a standard in enterprise world.
+These all makes it perfect backend solution for our project. To be more accurate –
+not only protocol but storage software which implements it – OpenLDAP server.
+
+### Environment
+
+#### OpenShift
+How many developers do we need for our Node.js+OpenLDAP project? If we had chosen
+Java it would have been taken 20 developers, database administrators and systems
+administrator to complete the project. But for us all we need is one full-stack
+developer who also has DevOps among the skills. And we will spend less on deployment and more on delivering so OpenShift, with it's great Pods and Images abstractions, is an excellent choise for us. However there are limitations. For example OpenLDAP image (I use [osixia](https://github.com/osixia/docker-openldap) image which can be forked and easily tweaked with cusom LDIFs) can not be deployed to OpenShift because it requires root priveleges to be installed. There are projects to hack this but unfortunately they are still not production ready.
+
+### Starting development
+
+#### Scope
+In this project we will implemement these services:
+- registration
+- authentification
+- change password
+- retireve users
+
+#### Implementation
+Firstly, it is important to understand that to communicate with OpenLDAP server node.js service have to send text messages over TCP using sockets. Sockets management is not a job that can be easily done in any language and node.js is not an exclusion. So do not reinvent the weel and jump stright to open source solutions. My personal favorite is [ldapjs](https://github.com/mcavage/node-ldapjs)
+created by former Joyent vice president of engineering Mark Cavage. Mark now works for Oracle and Joyent is a part of Samsung. So big names here. Apart from this ldapjs is most capable solution in open source team.
+
+Ok, let's begin coding!
+To begin with, we need to establish connection to OpenLDAP, after that we can start send and receive messages. Communication with OpenLDAP works in session essentialy in contrast with RESTful API that we are building.
+
+We will connect using these few lines of code:
+```
+const ldapOptions = {
+  url: ldapConfig.url,
+  timeout: ldapConfig.timeout,
+  connectTimeout: ldapConfig.connectTimeout,
+  reconnect: true
+};
+const ldapClient = ldapjs.createClient(ldapOptions);
+```
+
+As I already mentioned, LDAP fundamentally sessional and synchronous software and it is so old so it can't bear multithreading properly, whereas Node.js is asynchronous thanks to [libuv](https://github.com/libuv/libuv). You can learn more about multithreaded clients to LDAP [here](http://home.ust.hk/~ccyflai/ldapsdk10/docs/threaded.htm#996824) and I will just mention that client shall not mix several sessions in one connection. Ldapjs solves this problem for us (that is why I love it) and we required only to relax, drink some puerh tea and do not try to reuse client object created by ldapjs module in different endpoints. Just always create new one.
+
+#### Registration
+On this step we will add a user to an LDAP Directory. Let's consider this code snippet:
+```
+module.exports.addUser = (userId, givenName, familyName, password) => {
+  return new Promise((resolve, reject) => {
+
+    // 1
+    const ldapClient = ldapjs.createClient(ldapOptions);
+
+    // 2
+    ldapClient.bind(ldapConfig.pwdUser, ldapConfig.pwdUserPassword, (err) => {
+
+      if (err) return reject(err);
+
+      let newUser = {
+        givenName: 'none',
+        uid: userId,
+        givenName: givenName,
+        familyName: familyName,
+        cn: userId,
+        userPassword: password,
+        objectClass: ["person", "organizationalPerson", "inetOrgPerson"],
+        pwdPolicySubentry: ldapConfig.pwdPolicySubentry
+      };
+
+      // 3
+      ldapClient.add(`cn=${userId},${ldapConfig.domain}`, newUser, (err, response) => {
+        if (err) return reject(err);
+        return resolve(response);
+      });
+    });
+  });
+}
+```
+To begin with, wrap your code with Promise, because ldapjs uses callbacks and can't be promisified automatically. Take in account that ldapjs uses Sockets at the backend and Sockets use EventEmitter to return results. In real life this means ldapjs.bind() will return true instantly and callback will be called later. So make sure that you resolve your promise explicitly calling Promise.resolve() inside your callback (for example, Bluebird.try() is not suitable as it does not require explicit resolve).
+
+Step 1. We build new client object to communicate with LDAP server. In turn ldapjs opens socket, establishes connection and add it to a pool.
+
+This operation does not use callbacks and all errors will be emited as events. You can catch 'em all using the code below:
+```
+ldapClient.on('error', function (err) {
+  if (err.syscall == "connect") {
+    console.log(err);
+  }
+});
+```
+Accordingly while developing centralized logging sub-system it is important to consider these to methods of error delivering.
+
+Step 2. [bind](https://www.ldap.com/the-ldap-bind-operation) operation is performed, which authenticate a user in LDAP server and establishes priveleged session. As we create a new user we should authenticate as a user administrator. After that our session wil have a right to add record to a directory.
+
+Step 3. Add new user to a server. Depending on your OpenLDAP schema for objectClasses this operation may require to specify unique cn (common name of an entity) and may be have givenName and familyName fields. Available attributes is provided by objectClass which inherited by a new record. We inherit three at once — person, organizationalPerson and inetOrgPerson.
+
+pwdPolicySubentry will keep a link to a record of objectClass pwdPolicy containing a list of password policy rules, such as password history, lockout, min length, etc. Actual password will be stored in a field designated by an actual policy. In our case it is userPassword.
+
+To add a user we specify DN [Distingueshed Name](https://msdn.microsoft.com/en-us/library/aa366101(v=vs.85).aspx) and a dictionary with pairs attribute:value. Empty err in callback cause fulfill promise.
+
+You may notice that we do not unbind after the end of transaction. It is perfectly OK and not a bug as it will not cause any issues with OpenLDAP and connection is managed for you by ldapjs. You may test it and notice that unbind will not close the connection for you, nor do any other finishing activity. However it is a good idea to unbind to release OpenLDAP resources.
+
+#### Authentication
+```
+module.exports.authenticate = (userId, password) => {
+  return new Promise((resolve, reject) => {
+    const ldapClient = ldapjs.createClient(ldapOptions);
+
+    ldapClient.bind(`cn=${userId},${ldapConfig.domain}`, password, (err, res) => {
+      if (err) {
+        //@see https://github.com/mcavage/node-ldapjs/blob/7059cf6b8a0b4ff4c566714d97f3cef04f887c3b/test/client.test.js @ 305
+        return reject(err);
+      }
+      ldapClient.unbind();
+      return resolve(res);
+    });
+  }
+};
+```
+As usual we use Promises and do bind inside to establish priveleged session with specified login and password. If it was successful and a the login-password pair was correct then the promise will be resolved otherwise it will be rejected.
+
+#### Change password
+To modify existing records we need to build a special object Change in which we will incapsulate operation name and fields with new values that we want to update.
+```
+module.exports.changePassword = (userId, passwordOld, passwordNew) => {
+  return new Promise((resolve, reject) => {
+
+    const ldapClient = ldapjs.createClient(ldapOptions);
+
+    // 1
+    ldapClient.bind(`cn=${userId},${ldapConfig.domain}`, passwordOld, err => {
+      if (err) return reject(err);
+
+      // 2
+      ldapClient.modify(getDomainString(userId),
+        [
+          new ldapjs.Change({
+            operation: 'replace',
+            modification: {
+              userPassword: passwordNew
+            }
+          })
+        ],
+        function (err) {
+          if (err) reject(err);
+          return resolve(true);
+        }
+      );
+    });
+  }
+}
+```
+As this operation is meant to be done by a user to change her own password it is supposed that an old password is known. Therefore at first we prove this to be true binding the user (step 1) and as result establishing a session with priveledge to modify the password.
+
+On the step 2 we create modification object in which we specify operation replace. This operation does not require us to specify old password in Change object as we already know that it is correct because of the bind above. Other option is to user operation 'modify' which will give responsibility to check old password to OpenLDAP. Either case or Change object will be trasformed by ldapjs to a message to LDAP server and if it will be successful in the end we will have a fullfilled promise.
+
+If a user forgot her password then it is impossible for her to authenticate so the code should be executed using secure context of a third party who has priveleges to change password, i.e. user admin account. All remain logic stays the same. Just one thing to keep in mind – it is discouraged to use RootDN for this operation for a few reasons and one of them it will not affect password policy history rule, which means new password can be the same as previous even if you define a rule to not create same passwords.
+
+#### Retrieve
+And finally let's end our module with search records method which may be helpful for administration purposes.
+```
+module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
+  return new Promise((resolve, reject) => {
+    const ldapClient = ldapjs.createClient(ldapOptions);
+
+    // 1
+    ldapClient.bind(ldapConfig.managerUser, ldapConfig.managerUserPassword, err => {
+      if (err) return reject(err);
+
+      // 2
+      let options = {
+        attributes: ["cn", "createTimestamp", "modifyTimestamp", "pwdPolicySubentry"],
+        scope: "sub",
+        filter: "(objectClass=person)"
+      };
+
+      // 3
+      ldapClient.search(ldapConfig.domain, options, (err, res) => {
+
+        if (err) return reject(err);
+        let entries = [];
+        res.on('searchEntry', function (entry) {
+          var r = entry.object;
+          entries.push(r);
+        });
+
+        res.on('error', function (err) {
+          reject(err);
+        });
+
+        res.on('end', function (result) {
+          resolve(entries);
+        });
+      });
+    });
+  });
+}
+```
+So after creating a client we bind as a manager user (step 1) to gain priveleges to access all records in directory (regular users can acceess to only their own record).
+
+Step 2 - we construct a search options object (please refer to
+[ldapsearch](http://www.openldap.org/software/man.cgi?query=ldapsearch&apropos=0&sektion=0&manpath=OpenLDAP+2.0-Release&format=html)
+for documentation). Please note how we specify here hidden system fields so they will be available in results.
+
+Step 3 - getting search results in a stream fashion. This is the nature of OpenLDAP – not an atomic response but a stream of data chunks that should be collected and stored.
+
+### Conclusion
+OpenLDAP is old and it is as bad as good. It seems complicated and intricate for new comers, requires some learning curve to be passed, has some restrictions related to obsolete architecture and data model. From the other hand it is simple and robust for advanced users, workhorse in enterprise systems where it is required enhanced security and connect from variety of software. It seems that it still in a game even with modern players.
