@@ -21,7 +21,7 @@ refer to the giants and their experience:
 - [LinkedIn moved to Node.js](http://highscalability.com/blog/2012/10/4/linkedin-moved-from-rails-to-node-27-servers-cut-and-up-to-2.html)
 
 The version of Node.js which is used in this article is 6.2.1:
-```
+``` bash
 $ node --version
 v6.2.1
 ```
@@ -71,7 +71,7 @@ As I already mentioned, LDAP fundamentally sessional and synchronous software an
 
 ### Registration
 On this step we will add a user to an LDAP Directory. Let's consider this code snippet:
-```
+``` javascript
 module.exports.addUser = (userId, givenName, familyName, password) => {
   return new Promise((resolve, reject) => {
 
@@ -108,7 +108,7 @@ To begin with, wrap your code with Promise, because ldapjs uses callbacks and ca
 Step 1. We build new client object to communicate with LDAP server. In turn ldapjs opens socket, establishes connection and add it to a pool.
 
 This operation does not use callbacks and all errors will be emited as events. You can catch 'em all using the code below:
-```
+``` javascript
 ldapClient.on('error', function (err) {
   if (err.syscall == "connect") {
     console.log(err);
@@ -128,7 +128,7 @@ To add a user we specify DN [Distingueshed Name](https://msdn.microsoft.com/en-u
 You may notice that we do not unbind after the end of transaction. It is perfectly OK and not a bug as it will not cause any issues with OpenLDAP and connection is managed for you by ldapjs. You may test it and notice that unbind will not close the connection for you, nor do any other finishing activity. However it is a good idea to unbind to release OpenLDAP resources.
 
 ### Authentication
-```
+``` javascript
 module.exports.authenticate = (userId, password) => {
   return new Promise((resolve, reject) => {
     const ldapClient = ldapjs.createClient(ldapOptions);
@@ -148,7 +148,7 @@ As usual we use Promises and do bind inside to establish priveleged session with
 
 ### Change password
 To modify existing records we need to build a special object Change in which we will incapsulate operation name and fields with new values that we want to update.
-```
+``` javascript
 module.exports.changePassword = (userId, passwordOld, passwordNew) => {
   return new Promise((resolve, reject) => {
 
@@ -185,7 +185,7 @@ If a user forgot her password then it is impossible for her to authenticate so t
 
 ### Retrieve
 And finally let's end our module with search records method which may be helpful for administration purposes.
-```
+``` javascript
 module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
   return new Promise((resolve, reject) => {
     const ldapClient = ldapjs.createClient(ldapOptions);
