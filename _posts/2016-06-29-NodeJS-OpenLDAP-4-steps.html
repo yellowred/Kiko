@@ -84,27 +84,35 @@ module.exports.addUser = (userId, givenName, familyName, password) => {
     const ldapClient = ldapjs.createClient(ldapOptions);
 
     // 2
-    ldapClient.bind(ldapConfig.pwdUser, ldapConfig.pwdUserPassword, (err) => {
+    ldapClient.bind(
+      ldapConfig.pwdUser,
+      ldapConfig.pwdUserPassword,
+      (err) => {
 
-      if (err) return reject(err);
-
-      let newUser = {
-        givenName: 'none',
-        uid: userId,
-        givenName: givenName,
-        familyName: familyName,
-        cn: userId,
-        userPassword: password,
-        objectClass: ["person", "organizationalPerson", "inetOrgPerson"],
-        pwdPolicySubentry: ldapConfig.pwdPolicySubentry
-      };
-
-      // 3
-      ldapClient.add(`cn=${userId},${ldapConfig.domain}`, newUser, (err, response) => {
         if (err) return reject(err);
-        return resolve(response);
-      });
-    });
+
+        let newUser = {
+          givenName: 'none',
+          uid: userId,
+          givenName: givenName,
+          familyName: familyName,
+          cn: userId,
+          userPassword: password,
+          objectClass: ["person", "organizationalPerson", "inetOrgPerson"],
+          pwdPolicySubentry: ldapConfig.pwdPolicySubentry
+        };
+
+        // 3
+        ldapClient.add(
+          ``cn=${userId},${ldapConfig.domain}``,
+          newUser,
+          (err, response) => {
+            if (err) return reject(err);
+            return resolve(response);
+          }
+        );
+      }
+    );
   });
 }
 ```
@@ -142,14 +150,18 @@ module.exports.authenticate = (userId, password) => {
   return new Promise((resolve, reject) => {
     const ldapClient = ldapjs.createClient(ldapOptions);
 
-    ldapClient.bind(`cn=${userId},${ldapConfig.domain}`, password, (err, res) => {
-      if (err) {
-        //@see https://github.com/mcavage/node-ldapjs/blob/7059cf6b8a0b4ff4c566714d97f3cef04f887c3b/test/client.test.js @ 305
-        return reject(err);
+    ldapClient.bind(
+      ``cn=${userId},${ldapConfig.domain}``,
+      password,
+      (err, res) => {
+        if (err) {
+          //@see https://github.com/mcavage/node-ldapjs/blob/7059cf6b8a0b4ff4c566714d97f3cef04f887c3b/test/client.test.js @ 305
+          return reject(err);
+        }
+        ldapClient.unbind();
+        return resolve(res);
       }
-      ldapClient.unbind();
-      return resolve(res);
-    });
+    );
   }
 };
 ```
@@ -166,25 +178,29 @@ module.exports.changePassword = (userId, passwordOld, passwordNew) => {
     const ldapClient = ldapjs.createClient(ldapOptions);
 
     // 1
-    ldapClient.bind(`cn=${userId},${ldapConfig.domain}`, passwordOld, err => {
-      if (err) return reject(err);
+    ldapClient.bind(
+      ``cn=${userId},${ldapConfig.domain}``,
+      passwordOld,
+      err => {
+        if (err) return reject(err);
 
-      // 2
-      ldapClient.modify(getDomainString(userId),
-        [
-          new ldapjs.Change({
-            operation: 'replace',
-            modification: {
-              userPassword: passwordNew
-            }
-          })
-        ],
-        function (err) {
-          if (err) reject(err);
-          return resolve(true);
-        }
-      );
-    });
+        // 2
+        ldapClient.modify(getDomainString(userId),
+          [
+            new ldapjs.Change({
+              operation: 'replace',
+              modification: {
+                userPassword: passwordNew
+              }
+            })
+          ],
+          function (err) {
+            if (err) reject(err);
+            return resolve(true);
+          }
+        );
+      }
+    );
   }
 }
 ```
@@ -204,35 +220,39 @@ module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
     const ldapClient = ldapjs.createClient(ldapOptions);
 
     // 1
-    ldapClient.bind(ldapConfig.managerUser, ldapConfig.managerUserPassword, err => {
-      if (err) return reject(err);
-
-      // 2
-      let options = {
-        attributes: ["cn", "createTimestamp", "modifyTimestamp", "pwdPolicySubentry"],
-        scope: "sub",
-        filter: "(objectClass=person)"
-      };
-
-      // 3
-      ldapClient.search(ldapConfig.domain, options, (err, res) => {
-
+    ldapClient.bind(
+      ldapConfig.managerUser,
+      ldapConfig.managerUserPassword,
+      err => {
         if (err) return reject(err);
-        let entries = [];
-        res.on('searchEntry', function (entry) {
-          var r = entry.object;
-          entries.push(r);
-        });
 
-        res.on('error', function (err) {
-          reject(err);
-        });
+        // 2
+        let options = {
+          attributes: ["cn", "createTimestamp", "modifyTimestamp", "pwdPolicySubentry"],
+          scope: "sub",
+          filter: "(objectClass=person)"
+        };
 
-        res.on('end', function (result) {
-          resolve(entries);
+        // 3
+        ldapClient.search(ldapConfig.domain, options, (err, res) => {
+
+          if (err) return reject(err);
+          let entries = [];
+          res.on('searchEntry', function (entry) {
+            var r = entry.object;
+            entries.push(r);
+          });
+
+          res.on('error', function (err) {
+            reject(err);
+          });
+
+          res.on('end', function (result) {
+            resolve(entries);
+          });
         });
-      });
-    });
+      }
+    );
   });
 }
 ```
