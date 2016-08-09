@@ -18,8 +18,8 @@ The price will be scarce in structures variety, messy variable types,
 lack of available abstractions and 100 and 1 way to shoot yourself in the foot.
 Anyway Node.js delivers great results in specific field – building APIs. And we can
 refer to the giants and their experience:
-- [Node.js at PayPal](https://www.paypal-engineering.com/2013/11/22/node-js-at-paypal/)
-- [LinkedIn moved to Node.js](http://highscalability.com/blog/2012/10/4/linkedin-moved-from-rails-to-node-27-servers-cut-and-up-to-2.html)
+* [Node.js at PayPal](https://www.paypal-engineering.com/2013/11/22/node-js-at-paypal/)
+* [LinkedIn moved to Node.js](http://highscalability.com/blog/2012/10/4/linkedin-moved-from-rails-to-node-27-servers-cut-and-up-to-2.html)
 
 The version of Node.js which is used in this article is 6.2.1:
 
@@ -46,10 +46,10 @@ developer who also has DevOps among the skills. And we will spend less on deploy
 
 ### Scope
 In this project we will implemement these services:
-- registration
-- authentification
-- change password
-- retireve users
+* registration
+* authentification
+* change password
+* retireve users
 
 ### Implementation
 Firstly, it is important to understand that to communicate with OpenLDAP server node.js service have to send text messages over TCP using sockets. Sockets management is not a job that can be easily done in any language and node.js is not an exclusion. So do not reinvent the weel and jump stright to open source solutions. My personal favorite is [ldapjs](https://github.com/mcavage/node-ldapjs)
