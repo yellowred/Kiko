@@ -12,11 +12,11 @@ systems.
 
 ## Why NodeJS?
 
-Node.js is the best bet if you are going to create SaaS because it is easy in development,
+Node.js is the best bet in API economy, because it is easy in development,
 fast in production, requires less resources and provides efficient solutions.
-The price will be scarce in structures variety, messy variable types,
+The price is scarce in structures variety, messy variable types,
 lack of available abstractions and 100 and 1 way to shoot yourself in the foot.
-Anyway Node.js delivers great results in specific field – building APIs. And we can
+Anyway Node.js delivers great results it's very specific field and we can
 refer to the giants and their experience:
 
 * [Node.js at PayPal](https://www.paypal-engineering.com/2013/11/22/node-js-at-paypal/)
@@ -32,16 +32,15 @@ The version of Node.js which is used in this article is 6.2.1:
 ## Why LDAP?
 LDAP is secure, reliable and wide spread protocol for storing user directory and
 organizing single sign on point. It is supported by abundance of applications
-and operating systems. Moreover defacto it is a standard in enterprise world.
-These all makes it perfect backend solution for our project. To be more accurate –
-not only protocol but storage software which implements it – OpenLDAP server.
+and operating systems. Moreover it is a de facto standard in enterprise world.
+These all makes it's implementation – OpenLDAP server – perfect backend solution for our project.
 
 ## Environment
 
 How many developers do we need for our Node.js+OpenLDAP project? If we had chosen
 Java it would have been taken 20 developers, database administrators and systems
-administrator to complete the project. But for us all we need is one full-stack
-developer who also has DevOps among the skills. And we will spend less on deployment and more on delivering so OpenShift, with it's great Pods and Images abstractions, is an excellent choise for us. However there are limitations. For example OpenLDAP image (I use [osixia](https://github.com/osixia/docker-openldap) image which can be forked and easily tweaked with cusom LDIFs) can not be deployed to OpenShift because it requires root priveleges to be installed. There are projects to hack this but unfortunately they are still not production ready.
+administrator to complete the project. But with Node.js all we need is one full-stack
+developer who also has got DevOps among his skills. And we will spend less on deployment and more on delivering so OpenShift, with it's great Pods and Images abstractions, is an excellent choise for us. However there are limitations. For example OpenLDAP image (I use [osixia](https://github.com/osixia/docker-openldap) image which can be forked and easily tweaked with cusom LDIFs) can not be deployed to OpenShift because it requires root priveleges to be installed. There are projects to hack this behavior, but unfortunately they are still not production ready.
 
 ## Starting development
 
@@ -54,10 +53,10 @@ In this project we will implemement these services:
 * retireve users
 
 ### Implementation
-Firstly, it is important to understand that to communicate with OpenLDAP server node.js service have to send text messages over TCP using sockets. Sockets management is not a job that can be easily done in any language and node.js is not an exclusion. So do not reinvent the weel and jump stright to open source solutions. My personal favorite is [ldapjs](https://github.com/mcavage/node-ldapjs)
+Firstly, it is important to understand that to communicate with OpenLDAP server node.js service has to send text messages over TCP using sockets. Sockets management is not a job that can be maintained in any language and node.js is not an exclusion. So do not reinvent the weel and jump stright to open source solutions. My personal favorite is [ldapjs](https://github.com/mcavage/node-ldapjs)
 created by former Joyent vice president of engineering Mark Cavage. Mark now works for Oracle and Joyent is a part of Samsung. So big names here. Apart from this ldapjs is most capable solution in open source team.
 
-Ok, let's begin coding!
+All right, let's start coding!
 To begin with, we need to establish connection to OpenLDAP, after that we can start send and receive messages. Communication with OpenLDAP works in session essentialy in contrast with RESTful API that we are building.
 
 We will connect using these few lines of code:
@@ -120,7 +119,7 @@ module.exports.addUser = (userId, givenName, familyName, password) => {
 }
 ```
 
-To begin with, wrap your code with Promise, because ldapjs uses callbacks and can't be promisified automatically. Take in account that ldapjs uses Sockets at the backend and Sockets use EventEmitter to return results. In real life this means ldapjs.bind() will return true instantly and callback will be called later. So make sure that you resolve your promise explicitly calling Promise.resolve() inside your callback (for example, Bluebird.try() is not suitable as it does not require explicit resolve).
+First of all, let's wrap our code with Promise as ldapjs uses callbacks and can't be promisified automatically. Take in account that ldapjs uses Sockets at the backend and Sockets use EventEmitter to return results. In real life this means ldapjs.bind() will return true instantly and callback will be called later. So make sure that you resolve your promise explicitly calling Promise.resolve() inside your callback (for example, Bluebird.try() is not suitable as it does not require explicit resolve).
 
 Step 1. We build new client object to communicate with LDAP server. In turn ldapjs opens socket, establishes connection and add it to a pool.
 
@@ -134,7 +133,7 @@ ldapClient.on('error', function (err) {
 });
 ```
 
-Accordingly while developing centralized logging sub-system it is important to consider these to methods of error delivering.
+Accordingly while developing centralized logging sub-system it is important to consider these as methods of error delivering.
 
 Step 2. [bind](https://www.ldap.com/the-ldap-bind-operation) operation is performed, which authenticate a user in LDAP server and establishes priveleged session. As we create a new user we should authenticate as a user administrator. After that our session wil have a right to add record to a directory.
 
