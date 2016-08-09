@@ -60,7 +60,7 @@ To begin with, we need to establish connection to OpenLDAP, after that we can st
 
 We will connect using these few lines of code:
 
-``` javascript
+~~~ javascript
 
 const ldapOptions = {
   url: ldapConfig.url,
@@ -70,7 +70,7 @@ const ldapOptions = {
 };
 const ldapClient = ldapjs.createClient(ldapOptions);
 
-```
+~~~
 
 As I already mentioned, LDAP fundamentally sessional and synchronous software and it is so old so it can't bear multithreading properly, whereas Node.js is asynchronous thanks to [libuv](https://github.com/libuv/libuv). You can learn more about multithreaded clients to LDAP [here](http://home.ust.hk/~ccyflai/ldapsdk10/docs/threaded.htm#996824) and I will just mention that client shall not mix several sessions in one connection. Ldapjs solves this problem for us (that is why I love it) and we required only to relax, drink some puerh tea and do not try to reuse client object created by ldapjs module in different endpoints. Just always create new one.
 
