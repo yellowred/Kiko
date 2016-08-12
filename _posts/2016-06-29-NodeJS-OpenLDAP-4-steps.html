@@ -209,12 +209,12 @@ module.exports.changePassword = (userId, passwordOld, passwordNew) => {
 
 As this operation is meant to be done by a user to change her own password it is supposed that an old password is known. Therefore at first we prove this to be true binding the user (step 1) and as result establishing a session with priveledge to modify the password.
 
-On the step 2 we create modification object in which we specify operation replace. This operation does not require us to specify old password in Change object as we already know that it is correct because of the bind above. Other option is to user operation 'modify' which will give responsibility to check old password to OpenLDAP. Either case or Change object will be trasformed by ldapjs to a message to LDAP server and if it will be successful in the end we will have a fullfilled promise.
+On the step 2 we create modification object with operation property set to "replace". This operation type does not require us to specify old password in Change object as we already know that it is correct because of the successful bind above. Other option is to use operation 'modify' which will shift responsibility to check old password to OpenLDAP. Either way Change object will be trasformed by ldapjs to a message to LDAP server and if it is successful at the end we will have a fullfilled promise.
 
-If a user forgot her password then it is impossible for her to authenticate so the code should be executed using secure context of a third party who has priveleges to change password, i.e. user admin account. All remain logic stays the same. Just one thing to keep in mind – it is discouraged to use RootDN for this operation for a few reasons and one of them it will not affect password policy history rule, which means new password can be the same as previous even if you define a rule to not create same passwords.
+If a user forgot her password then it is impossible for her to authenticate so the code should be executed using secure context of a third party who has priveleges to change password, i.e. user admin account. All remaining logic stays the same. Please note that it is discouraged to do this operation as a RootDN for a few reasons. One of them is that it will not affect password policy history rule, which means new password can be the same as previous even if you define a rule to not create same passwords.
 
 ### Retrieve
-And finally let's end our module with search records method which may be helpful for administration purposes.
+And finally let's finish our module with search records method which can be helpful for administration purposes.
 
 ``` javascript
 module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
@@ -270,7 +270,7 @@ Step 2 - we construct a search options object (please refer to
 [ldapsearch](http://www.openldap.org/software/man.cgi?query=ldapsearch&apropos=0&sektion=0&manpath=OpenLDAP+2.0-Release&format=html)
 for documentation). Please note how we specify here hidden system fields so they will be available in results.
 
-Step 3 - getting search results in a stream fashion. This is the nature of OpenLDAP – not an atomic response but a stream of data chunks that should be collected and stored.
+Step 3 - getting search results as a stream. This is the nature of OpenLDAP – not an atomic response but a stream of data chunks that should be collected and stored.
 
 ## Conclusion
 OpenLDAP has it's benefits as well as drawbacks. It seems complicated and intricate for newcomers, requires some learning curve to be passed, has some restrictions related to obsolete architecture and data model. From the other hand it is simple and robust for advanced users, workhorse in enterprise systems where it is required enhanced security and connect from variety of software. It seems that it still in a game even with modern players.
