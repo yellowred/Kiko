@@ -16,7 +16,7 @@ systems.
 ## Why NodeJS?
 
 Node.js is the best bet in API economy, because it is easy in development,
-fast in production, requires less resources and provides efficient solutions.
+fast in production, requires less resources and provides efficient solutions. And last but not least, it is modern and makes you think in a way modern applications are created.
 The price is scarce in structures variety, messy variable types,
 lack of available abstractions and 100 and 1 way to shoot yourself in the foot.
 Anyway Node.js delivers great results it's very specific field and we can
@@ -24,6 +24,7 @@ refer to the giants and their experience:
 
 * [Node.js at PayPal](https://www.paypal-engineering.com/2013/11/22/node-js-at-paypal/)
 * [LinkedIn moved to Node.js](http://highscalability.com/blog/2012/10/4/linkedin-moved-from-rails-to-node-27-servers-cut-and-up-to-2.html)
+* [Distributed Web Architectures in Uber with Node.js](https://www.joyent.com/blog/node-js-office-hours-curtis-chambers-uber)
 
 The version of Node.js which is used in this article is 6.2.1:
 
@@ -63,6 +64,8 @@ All right, let's start coding!
 To begin with, we need to establish connection to OpenLDAP, after that we can start send and receive messages. Communication with OpenLDAP works in session essentialy in contrast with RESTful API that we are building.
 
 We will connect using these few lines of code:
+
+<script src="https://gist.github.com/yellowred/58a65d50c5a10d55fcc0f1a87b94d043.js"></script>
 
 ~~~ javascript
 
