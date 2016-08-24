@@ -67,63 +67,12 @@ We will connect using these few lines of code:
 
 <script src="https://gist.github.com/yellowred/58a65d50c5a10d55fcc0f1a87b94d043.js"></script>
 
-~~~ javascript
-
-const ldapOptions = {
-  url: ldapConfig.url,
-  timeout: ldapConfig.timeout,
-  connectTimeout: ldapConfig.connectTimeout,
-  reconnect: true
-};
-const ldapClient = ldapjs.createClient(ldapOptions);
-
-~~~
-
 As I already mentioned, LDAP fundamentally sessional and synchronous software and it is so old so it can't bear multithreading properly, whereas Node.js is asynchronous thanks to [libuv](https://github.com/libuv/libuv). You can learn more about multithreaded clients to LDAP [here](http://home.ust.hk/~ccyflai/ldapsdk10/docs/threaded.htm#996824) and I will just mention that client shall not mix several sessions in one connection. Ldapjs solves this problem for us (that is why I love it) and we required only to relax, drink some puerh tea and do not try to reuse client object created by ldapjs module in different endpoints. Just always create new one.
 
 ### Registration
 On this step we will add a user to an LDAP Directory. Let's consider this code snippet:
 
-``` javascript
-module.exports.addUser = (userId, givenName, familyName, password) => {
-  return new Promise((resolve, reject) => {
-
-    // 1
-    const ldapClient = ldapjs.createClient(ldapOptions);
-
-    // 2
-    ldapClient.bind(
-      ldapConfig.pwdUser,
-      ldapConfig.pwdUserPassword,
-      (err) => {
-
-        if (err) return reject(err);
-
-        let newUser = {
-          givenName: 'none',
-          uid: userId,
-          givenName: givenName,
-          familyName: familyName,
-          cn: userId,
-          userPassword: password,
-          objectClass: ["person", "organizationalPerson", "inetOrgPerson"],
-          pwdPolicySubentry: ldapConfig.pwdPolicySubentry
-        };
-
-        // 3
-        ldapClient.add(
-          'cn=' + userId + ',' + ldapConfig.domain,
-          newUser,
-          (err, response) => {
-            if (err) return reject(err);
-            return resolve(response);
-          }
-        );
-      }
-    );
-  });
-}
-```
+<script src="https://gist.github.com/yellowred/d55da0aa3ac3552c8d252019d351f7d6.js"></script>
 
 First of all, let's wrap our code with Promise as ldapjs uses callbacks and can't be promisified automatically. Take in account that ldapjs uses Sockets at the backend and Sockets use EventEmitter to return results. In real life this means ldapjs.bind() will return true instantly and callback will be called later. So make sure that you resolve your promise explicitly calling Promise.resolve() inside your callback (for example, Bluebird.try() is not suitable as it does not require explicit resolve).
 
@@ -131,13 +80,7 @@ Step 1. We build new client object to communicate with LDAP server. In turn ldap
 
 This operation does not use callbacks and all errors will be emited as events. You can catch 'em all using the code below:
 
-``` javascript
-ldapClient.on('error', function (err) {
-  if (err.syscall == "connect") {
-    console.log(err);
-  }
-});
-```
+<script src="https://gist.github.com/yellowred/bdeef2c97260d7fb0b730c4d88c725c3.js"></script>
 
 Accordingly while developing centralized logging sub-system it is important to consider these as methods of error delivering.
 
@@ -153,65 +96,14 @@ You may notice that we do not unbind after the end of transaction. It is perfect
 
 ### Authentication
 
-``` javascript
-module.exports.authenticate = (userId, password) => {
-  return new Promise((resolve, reject) => {
-    const ldapClient = ldapjs.createClient(ldapOptions);
-
-    ldapClient.bind(
-      'cn=' + userId + ',' + ldapConfig.domain,
-      password,
-      (err, res) => {
-        if (err) {
-          //@see https://github.com/mcavage/node-ldapjs/blob/7059cf6b8a0b4ff4c566714d97f3cef04f887c3b/test/client.test.js @ 305
-          return reject(err);
-        }
-        ldapClient.unbind();
-        return resolve(res);
-      }
-    );
-  }
-};
-```
+<script src="https://gist.github.com/yellowred/22f9989e3a951448c84ed8eab1f3c93d.js"></script>
 
 As usual we use Promises and do bind inside to establish priveleged session with specified login and password. If it was successful and a the login-password pair was correct then the promise will be resolved otherwise it will be rejected.
 
 ### Change password
 To modify existing records we need to build a special object Change in which we will incapsulate operation name and fields with new values that we want to update.
 
-``` javascript
-module.exports.changePassword = (userId, passwordOld, passwordNew) => {
-  return new Promise((resolve, reject) => {
-
-    const ldapClient = ldapjs.createClient(ldapOptions);
-
-    // 1
-    ldapClient.bind(
-      'cn=' + userId + ',' + ldapConfig.domain,
-      passwordOld,
-      err => {
-        if (err) return reject(err);
-
-        // 2
-        ldapClient.modify(getDomainString(userId),
-          [
-            new ldapjs.Change({
-              operation: 'replace',
-              modification: {
-                userPassword: passwordNew
-              }
-            })
-          ],
-          function (err) {
-            if (err) reject(err);
-            return resolve(true);
-          }
-        );
-      }
-    );
-  }
-}
-```
+<script src="https://gist.github.com/yellowred/f96dfe8d5297eca0008bb6ef54e3bc9c.js"></script>
 
 As this operation is meant to be done by a user to change her own password it is supposed that an old password is known. Therefore at first we prove this to be true binding the user (step 1) and as result establishing a session with priveledge to modify the password.
 
@@ -222,53 +114,7 @@ If a user forgot her password then it is impossible for her to authenticate so t
 ### Retrieve
 And finally let's finish our module with search records method which can be helpful for administration purposes.
 
-``` javascript
-module.exports.getAllLdapRecords = (userId, passwordOld, passwordNew) => {
-  return new Promise((resolve, reject) => {
-    const ldapClient = ldapjs.createClient(ldapOptions);
-
-    // 1
-    ldapClient.bind(
-      ldapConfig.managerUser,
-      ldapConfig.managerUserPassword,
-      err => {
-        if (err) return reject(err);
-
-        // 2
-        let options = {
-          attributes: [
-            "cn",
-            "createTimestamp",
-            "modifyTimestamp",
-            "pwdPolicySubentry"
-          ],
-          scope: "sub",
-          filter: "(objectClass=person)"
-        };
-
-        // 3
-        ldapClient.search(ldapConfig.domain, options, (err, res) => {
-
-          if (err) return reject(err);
-          let entries = [];
-          res.on('searchEntry', function (entry) {
-            var r = entry.object;
-            entries.push(r);
-          });
-
-          res.on('error', function (err) {
-            reject(err);
-          });
-
-          res.on('end', function (result) {
-            resolve(entries);
-          });
-        });
-      }
-    );
-  });
-}
-```
+<script src="https://gist.github.com/yellowred/d6cdf7fbedca17ed3b8d667e0fd2f1d9.js"></script>
 
 So after creating a client we bind as a manager user (step 1) to gain priveleges to access all records in directory (regular users can acceess to only their own record).
 
