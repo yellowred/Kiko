@@ -43,102 +43,10 @@ In the iOS app we will add a request itself:
 <script src="https://gist.github.com/yellowred/0d048c206e83dcc55c16f12b1a50cdc2.js"></script>
 
 Now we are ready to run the app and see the results!
-``` json
-{
-  "name": "express",
-  "hostname": "surfingcat.local",
-  "pid": 23560,
-  "req_id": "a5674c8b-d77b-4996-b1c1-e5856a8fddf8",
-  "level": 30,
-  "remote-address": "127.0.0.1",
-  "ip": "127.0.0.1",
-  "method": "POST",
-  "url": "/api/financials/",
-  "referer": "-",
-  "user-agent": {
-    "family": "Other",
-    "major": "0",
-    "minor": "0",
-    "patch": "0",
-    "device": {
-      "family": "Other",
-      "major": "0",
-      "minor": "0",
-      "patch": "0"
-    },
-    "os": {
-      "family": "iOS",
-      "major": "10",
-      "minor": "0",
-      "patch": "0"
-    }
-  },
-  "body": [
-    {
-      "rate": 1,
-      "date": "2016-09-24",
-      "text": "string",
-      "category": "string",
-      "uuid": "string",
-      "amount": 777
-    },
-    {
-      "rate": 1,
-      "date": "2016-09-24",
-      "text": "string",
-      "category": "string",
-      "uuid": "string",
-      "amount": 888
-    }
-  ],
-  "short-body": "[ { rate: 1,\n    dat",
-  "http-version": "1.1",
-  "response-time": 6.614708,
-  "response-hrtime": [
-    0,
-    6614708
-  ],
-  "status-code": 200,
-  "req-headers": {
-    "host": "0.0.0.0:3015",
-    "if-none-match": "W/\"b7-8JTWM2fj5Ke47KWSVA3qtw\"",
-    "accept": "*/*",
-    "accept-encoding": "gzip;q=1.0, compress;q=0.5",
-    "content-length": "193",
-    "content-type": "application/json",
-    "accept-language": "en;q=1.0",
-    "connection": "keep-alive",
-    "user-agent": "CrabApp/1.0 (kubrakov.CrabApp; build:1; iOS 10.0.0) Alamofire/4.0.0"
-  },
-  "res-headers": {
-    "vary": "Origin, Accept-Encoding",
-    "access-control-allow-credentials": "true",
-    "x-xss-protection": "1; mode=block",
-    "x-frame-options": "DENY",
-    "x-download-options": "noopen",
-    "x-content-type-options": "nosniff",
-    "content-type": "application/json; charset=utf-8",
-    "content-length": "369",
-    "etag": "W/\"171-ROqP5wdZBMHKfQrdtygw1Q\""
-  },
-  "req": {
-    "method": "POST",
-    "url": "/",
-    "headers": "[Circular]",
-    "remoteAddress": "127.0.0.1",
-    "remotePort": 52108
-  },
-  "res": {
-    "statusCode": 200,
-    "header": "HTTP/1.1 200 OK\r\nVary: Origin, Accept-Encoding\r\nAccess-Control-Allow-Credentials: true\r\nX-XSS-Protection: 1; mode=block\r\nX-Frame-Options: DENY\r\nX-Download-Options: noopen\r\nX-Content-Type-Options: nosniff\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 369\r\nETag: W/\"171-ROqP5wdZBMHKfQrdtygw1Q\"\r\nDate: Tue, 27 Sep 2016 14:30:57 GMT\r\nConnection: keep-alive\r\n\r\n"
-  },
-  "incoming": "<--",
-  "msg": "127.0.0.1 <-- POST /api/financials/ HTTP/1.1 200 369 - Other 0.0 iOS 10.0.0 6.614708 ms",
-  "time": "2016-09-27T14:30:57.484Z",
-  "v": 0
-}
-```
-This is `express-bunyan-logger` output of the Loopback app. We can see that the body is an array of objects and short-body is cutted off (not sure whether it is normal). And in RethinkDb Data Explorer we will be able to see them.
+
+<script src="https://gist.github.com/yellowred/c5bb7c0fd3629f8d737993ecd9ff33b0.js"></script>
+
+This is an `express-bunyan-logger` output of the Loopback app. We can see that the body is an array of objects and short-body is cutted off (not sure whether it is normal). And in RethinkDb Data Explorer we will be able to see them.
 <img src="/assets/rethinkdb-res1.png" alt="RethinkDB documents after Loopback POST"/>
 
 ## Conclusion
