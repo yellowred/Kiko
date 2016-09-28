@@ -1,0 +1,145 @@
+---
+layout: post
+title: "Why do you need to develop your own Digital Account."
+comments: true
+---
+<p class="lead">
+I have a side project for iOS which accepts user input as well as displays some data from third party source. For that I am building a smart backend which will store user records, fetch and store data from remote server and ready to deliver it to a consumer on demand. So for the backend I use Loopback 3 + RethinkDb stack which provides CRUD from out of the box and can be easily expanded with application logic. And I want to save an array of user records from iOS Swift 3 application in RethinkDb using Loopback.
+</p>
+<img src="/assets/swift3-logo.png" alt="Swift 3"/>
+
+## loopback-ios-sdk – failed
+
+First attempt was to implement official Strongloop SDK for iOS which is written in Objective-C but available in Swift through bridging. Unfortunately with Swift 3 this SDK is no longer working as stated in the [issue in github](https://github.com/strongloop/loopback-sdk-ios/issues/120).
+
+## Loopback
+
+Loopback provides a feature to save a bunch of user records with just one POST – you just need to send a JSON array of records in HTTP body, just like that:
+
+<script src="https://gist.github.com/yellowred/d8e40d280d852f946dfa1ce507f9d797.js"></script>
+
+This BDD shows that client should submit POST request with an JSON array of objects in order for Loopback to save it in RethinkDB automatically, without any custom logic.
+
+## Alamofire
+
+As we can see saving data in Loopback is easy and can be developed on top of any library that can send JSON array in http body using POST method. Alamofire is convenient and well known solution for that. As of time of writing this article there is Alamofire 4.0.0 for Swift 3 which is amazing. API for sending a request in stright-forward:
+
+<script src="https://gist.github.com/yellowred/443305a7e991f0130d8a1ae69e2f38d4.js"></script>
+
+Sorry for the copy paste from Alamofire docs. You may notice here that the request is dictionary. Changing it to Array will cause an error in xcode.
+```
+Backend.swift:17:31: Contextual type 'Parameters' (aka 'Dictionary<String, Any>') cannot be used with array literal
+```
+This means parameters can only be a map of keyed values.
+
+Small tweak can help us. We are going to create a new rule how to encode http body in a request for Alamofire. In order for that let's extend `String` class with the following code.
+
+<script src="https://gist.github.com/yellowred/7757104e00c01076b5a85548c7bdcebf.js"></script>
+
+So now it conforms with `ParameterEncoding` protocol and provides an `encode` method which will setup request assigning http body and content type. Http body value will be simply copied from a String itself and content type will be set to json as we are using this format to communicate with Loopback. As simple as that.
+
+In the iOS app we will add a request itself:
+
+<script src="https://gist.github.com/yellowred/0d048c206e83dcc55c16f12b1a50cdc2.js"></script>
+
+Now we are ready to run the app and see the results!
+```
+{
+  "name": "express",
+  "hostname": "surfingcat.local",
+  "pid": 23560,
+  "req_id": "a5674c8b-d77b-4996-b1c1-e5856a8fddf8",
+  "level": 30,
+  "remote-address": "127.0.0.1",
+  "ip": "127.0.0.1",
+  "method": "POST",
+  "url": "/api/financials/",
+  "referer": "-",
+  "user-agent": {
+    "family": "Other",
+    "major": "0",
+    "minor": "0",
+    "patch": "0",
+    "device": {
+      "family": "Other",
+      "major": "0",
+      "minor": "0",
+      "patch": "0"
+    },
+    "os": {
+      "family": "iOS",
+      "major": "10",
+      "minor": "0",
+      "patch": "0"
+    }
+  },
+  "body": [
+    {
+      "rate": 1,
+      "date": "2016-09-24",
+      "text": "string",
+      "category": "string",
+      "uuid": "string",
+      "amount": 777
+    },
+    {
+      "rate": 1,
+      "date": "2016-09-24",
+      "text": "string",
+      "category": "string",
+      "uuid": "string",
+      "amount": 888
+    }
+  ],
+  "short-body": "[ { rate: 1,\n    dat",
+  "http-version": "1.1",
+  "response-time": 6.614708,
+  "response-hrtime": [
+    0,
+    6614708
+  ],
+  "status-code": 200,
+  "req-headers": {
+    "host": "0.0.0.0:3015",
+    "if-none-match": "W/\"b7-8JTWM2fj5Ke47KWSVA3qtw\"",
+    "accept": "*/*",
+    "accept-encoding": "gzip;q=1.0, compress;q=0.5",
+    "content-length": "193",
+    "content-type": "application/json",
+    "accept-language": "en;q=1.0",
+    "connection": "keep-alive",
+    "user-agent": "CrabApp/1.0 (kubrakov.CrabApp; build:1; iOS 10.0.0) Alamofire/4.0.0"
+  },
+  "res-headers": {
+    "vary": "Origin, Accept-Encoding",
+    "access-control-allow-credentials": "true",
+    "x-xss-protection": "1; mode=block",
+    "x-frame-options": "DENY",
+    "x-download-options": "noopen",
+    "x-content-type-options": "nosniff",
+    "content-type": "application/json; charset=utf-8",
+    "content-length": "369",
+    "etag": "W/\"171-ROqP5wdZBMHKfQrdtygw1Q\""
+  },
+  "req": {
+    "method": "POST",
+    "url": "/",
+    "headers": "[Circular]",
+    "remoteAddress": "127.0.0.1",
+    "remotePort": 52108
+  },
+  "res": {
+    "statusCode": 200,
+    "header": "HTTP/1.1 200 OK\r\nVary: Origin, Accept-Encoding\r\nAccess-Control-Allow-Credentials: true\r\nX-XSS-Protection: 1; mode=block\r\nX-Frame-Options: DENY\r\nX-Download-Options: noopen\r\nX-Content-Type-Options: nosniff\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: 369\r\nETag: W/\"171-ROqP5wdZBMHKfQrdtygw1Q\"\r\nDate: Tue, 27 Sep 2016 14:30:57 GMT\r\nConnection: keep-alive\r\n\r\n"
+  },
+  "incoming": "<--",
+  "msg": "127.0.0.1 <-- POST /api/financials/ HTTP/1.1 200 369 - Other 0.0 iOS 10.0.0 6.614708 ms",
+  "time": "2016-09-27T14:30:57.484Z",
+  "v": 0
+}
+```
+This is `express-bunyan-logger` output of the Loopback app. We can see that the body is an array of objects and short-body is cutted off (not sure whether it is normal). And in RethinkDb Data Explorer we will be able to see them.
+<img src="/assets/rethinkdb-res1.png" alt="RethinkDB documents after Loopback POST"/>
+
+## Conclusion
+Loopback is a great framework to build APIs quickly, but it's iOS support is limited. Fortunately there are powerful tools written in Swift 3 which is highly customizable and provide a great deal for integration task.
