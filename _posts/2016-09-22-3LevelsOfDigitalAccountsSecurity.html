@@ -1,0 +1,50 @@
+---
+layout: post
+title: "3 levels of digital accounts security."
+comments: true
+---
+<p class="lead">
+In e-commerce security is always considered as something that impedes and also a good subject to save on. But in banks it is one of the most important parts of software development. In this article I would like to do a swift review of three levels of security up to a military grade to create a starting point from where a reader may explore further details.
+</p>
+
+## Skype
+Skype is a nice app for messaging and video calls. It is convenient, all my friends use it and it costs just nothing. My wife also has an account and recently it was hijacked and sold to some frauders who started to use it to ask people from my wife's skype contacts list to send money to them. As we were AFK at the moment when it started it took us around 12 hours to get back control of the account and the next day my wife was texting with everybody about the accident, confirming that the account was hacked, but now in her control, and saying I am sorry for all inconvenience caused. At the end we found out that several people actually transfered money to frauders and there near 0% to legally punish offenders.
+
+## Lowcost security
+
+So there are several reasons why that Skype accound was hijacked. And the overall reason is that this *account is a lowcost*:
+
+1) It was created to provide basic identity mechanism (so people can identify themselves and do not see messages of others).
+2) Expected damage in case of hijacking was estimated as low.
+3) Customers should not experience any troubles, so the support will not ask too much questions (especially under pressure).
+
+Another example may be an account in a hotel booking website: as long as personal information is masked a hijacked account provides for a hacker merely booking dates and location for a given login/email.
+
+As a result this type of digital account just works, helps to provide services and do not treat customers with too much security.
+
+## Industry standard security
+
+Having a secure authentication system is paramount when
+1) Users will have priveleges ([ACL](https://en.wikipedia.org/wiki/Access_control_list), [RBAC](https://en.wikipedia.org/wiki/Role-based_access_control), etc).
+2) Expected damage in case of hijacking is medium or higher.
+
+Speaking of a Skype account for some people there is no value in it except that they uploaded nice userpic and already added their friends. But there are people (like my wife) who use it to communicate with business contacts and the trust for her virtual identity here is high. Thsi trust can be a target for a malicious attack. So those people need to enforce security level up to the industry standard which means implementing processes which approved as safe by the internet industry. For a sign in process it is enforcing Two Factor Authentication and for reset password (in case if it was forgotten) – special security questions.
+
+So to enable this level of security in Skype you would need to bind it to Microsoft digital account. It provides 2FA mechanism where in order to login a user needs to enter security code which will be sent to either [Microsoft Authenticator](https://itunes.apple.com/us/app/microsoft-authenticator/id983156458) or her personal mobile phone.
+
+Another example can be Facebook which allows you to ask friends to help prove your identity if your password was forgotten which is much safer than security questions of Skype which can be hacked using social engineering.
+
+## Military-grade security
+
+When it comes to controlling and collecting user's sensitive data, government regulations comes to a scene. And if a digital account will process that data security have to be considered ahead convenience and productivity.
+
+Each country have it's own laws to control how enterprises receive, process and store user's data. For example there may be a rule to transfer user passwords only in encrypted state over SSL connection. As password is to be transfered from a frontend system to a backend digital account API it should be encrypted and then decrypted at the digital account side. That requires encryption module to be implemented with encryption up to a military-grade standard (for instance, any member of [IPSec](https://en.wikipedia.org/wiki/IPsec#Cryptographic_algorithms) suite) so Microsoft account will not work out for that.
+
+Another reason for advanced security can be specific rules for registering digital account in a company's system. For example only existing policy owners can register at an insurance company web site. Moreover they have to choose their login name from provided options which are their phone number or email. In turn these personal details must be show at the frontend or mobile application only in partially masked state which is defined by the law.
+
+All these reasons make regular digital account implementations (like Microsoft account or Facebook account) useless so companies build proprietary solutions for that.
+
+## Conclusion
+
+My suggestion is not to underestimate the treat from internet criminals nowadays and be prepared. There are cheap solutions on the market which provide industry standard security so there is no reason to choose lowcost and enforcing advanced practicies can be not only beneficial but some times even necessary.
+<img src="http://imgs.xkcd.com/comics/security.png" />
