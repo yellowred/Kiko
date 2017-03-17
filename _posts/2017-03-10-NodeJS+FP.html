@@ -27,8 +27,8 @@ We get rid of the whole cycle and instead engage JavaScript function [map](https
 Output:
 
 ```javascript
-[ [ undefined, 'obama@gmail.com', '' ],
-  [ undefined, 'trump@gmail.com', 'trump-president@gmail.com' ] ]
+[ [ undefined, 'michelle@gmail.com', '' ],
+  [ undefined, 'johann@gmail.com', 'trump-president@gmail.com' ] ]
 ```
 
 ## Flat Map
@@ -41,11 +41,11 @@ Output:
 
 ```javascript
 [ undefined,
-  'obama@gmail.com',
+  'michelle@gmail.com',
   '',
   undefined,
-  'trump@gmail.com',
-  'trump-president@gmail.com' ]
+  'johann@gmail.com',
+  'johann-md@gmail.com' ]
 ```
 
 ## Filter
@@ -57,9 +57,9 @@ Great! Flat list is much easier to understand and manipulate. It is tempting to 
 Output:
 
 ```javascript
-[ 'obama@gmail.com',
-  'trump@gmail.com',
-  'trump-president@gmail.com' ]
+[ 'michelle@gmail.com',
+  'johann@gmail.com',
+  'johann-md@gmail.com' ]
 ```
 
 Pretty neat! Now we are ready to build the final structure. So we aim to an array of dictionaries with two properties - emailAddress and token. Token is a one time JWT token which we are going to store in MongoDb. So this will require asynchronous requests as MongoDb API is asynchronous. Let's engage Bluebird's function [map](http://bluebirdjs.com/docs/api/promise.map.html) which can iterate through an array and execute a Promise for each element assigning back the return value.
@@ -69,11 +69,11 @@ Pretty neat! Now we are ready to build the final structure. So we aim to an arra
 Output:
 
 ```javascript
-[ { electronicAddress: 'obama@gmail.com',
+[ { electronicAddress: 'michelle@gmail.com',
     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2YWx1ZSI6Im9iYW1hQGdtYWlsLmNvbSIsImlhdCI6MTQ4OTczMzg1Mn0.lfoJ6zxUmVNE2AZ2nSY6fgoGEu6wN_xqemu3k1Z4XyQ' },
-  { electronicAddress: 'trump@gmail.com',
+  { electronicAddress: 'johann@gmail.com',
     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2YWx1ZSI6InRydW1wQGdtYWlsLmNvbSIsImlhdCI6MTQ4OTczMzg1Mn0.Rw1dZsx4NIosZVpWFREQSg7Wz8C5i2_b15CrNrZjHNc' },
-  { electronicAddress: 'trump-president@gmail.com',
+  { electronicAddress: 'johann-md@gmail.com',
     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2YWx1ZSI6InRydW1wLXByZXNpZGVudEBnbWFpbC5jb20iLCJpYXQiOjE0ODk3MzM4NTJ9.xZJAX35U2_5kL-LLSn2Jju6XGj9nqQ475TU4c7RgJd0' } ]
 ```
 
