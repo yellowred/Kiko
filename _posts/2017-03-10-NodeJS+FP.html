@@ -1,0 +1,80 @@
+---
+layout: post
+title: "Implementing functional programming in data transformation tasks in NodeJS."
+comments: true
+---
+<p class="lead">
+  There is a common task in many software cases – get one list and transform it to another list. For example, implementing consesus protocol in a blockchain requires a function to receive an array of transaction and produce another list of transactions on which it agrees upon. In this article we will examine a case where we are given a data set with contacts of different people based on which we need to produce another list of related one time contact tokens to send to a client. We will see how to implement the case in functional [programming paradigm](https://www.ics.uci.edu/~pattis/ICS-31/lectures/functionsasdata/functionsasdata.txt) which is easier to understand and reason about.
+</p>
+
+Recently I had to carry out a refactoring of a JavaScript code which have been typical for many years:
+<script src="https://gist.github.com/yellowred/4b3333243f61619044cc5646f19b9e69.js"></script>
+
+So first of all it looks monolytic and it makes it hard to reason about. There are no logical steps and in order to find out what is goin on you need to execute the whole function in your mind. Loops can be pretty big so we have to put comments beside curly braces to identify where a loops ends.
+Basically what it does is loops through the data, collects unique emails and generates an array of tokens for them.
+We use the `yield` keyword to get a value from asynchronous functions before continue to execute the rest of a function.
+
+So lets fix these weaknesses converting our code to functional style. One of the traits of this is to make a value immutable which we will pass to a function which transforms it in some way and in turn pass it to another function and so on until we shape the required structure, in opposite to conventional approach where you assign a new value every loop.
+
+
+## Eliminate loops
+
+Lets start from the part that I like the most – getting our code free of `for` statements.
+<script src="https://gist.github.com/yellowred/e6fd692721db377ac650357d20e45653.js"></script>
+
+We get rid of the whole cycle and instead engage JavaScript function [map](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/map) (node.js [supports it](http://node.green/#ES2015-built-ins-typed-arrays--TypedArray--prototype-map) since v4) which will interate through an array and produce a new array where each element will be a result of the callback. This function is synchronous and will block the whole event loop. Keep this in mind and consider dividing into chunks large data sets.
+
+Output:
+
+```javascript
+[ [ undefined, 'obama@gmail.com', '' ],
+  [ undefined, 'trump@gmail.com', 'trump-president@gmail.com' ] ]
+```
+
+## Flat Map
+So as a result we got an array of arrays of emailAdresses. Our target structure is a plain list, so lets convert this 2 dimensions array into a flat list. We are going to engage two new JavaScript functions: [reduce](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce) and [concat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/concat). Reduce iterates through an array and produce a single value and concat simply merges two arrays. Combination of them is a single plain array.
+
+
+<script src="https://gist.github.com/yellowred/5fe3c82296ff6be9e74ac0fae83d8dbb.js"></script>
+
+Output:
+
+```javascript
+[ undefined,
+  'obama@gmail.com',
+  '',
+  undefined,
+  'trump@gmail.com',
+  'trump-president@gmail.com' ]
+```
+
+## Filter
+
+Great! Flat list is much easier to understand and manipulate. It is tempting to start producing target structure, but before that let's perform a clean up – remove duplicates and empty values. In order for that we will use the [filter](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter) function – it will remove all elements which do not satisfy with a condition.
+
+<script src="https://gist.github.com/yellowred/8bc8d09316a5027f80eebb372ba313a9.js"></script>
+
+Output:
+
+```javascript
+[ 'obama@gmail.com',
+  'trump@gmail.com',
+  'trump-president@gmail.com' ]
+```
+
+Pretty neat! Now we are ready to build the final structure. So we aim to an array of dictionaries with two properties - emailAddress and token. Token is a one time JWT token which we are going to store in MongoDb. So this will require asynchronous requests as MongoDb API is asynchronous. Let's engage Bluebird's function [map](http://bluebirdjs.com/docs/api/promise.map.html) which can iterate through an array and execute a Promise for each element assigning back the return value.
+
+<script src="https://gist.github.com/yellowred/9dc4299b50f2707770495e981fbb66ec.js"></script>
+
+Output:
+
+```javascript
+[ { electronicAddress: 'obama@gmail.com',
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2YWx1ZSI6Im9iYW1hQGdtYWlsLmNvbSIsImlhdCI6MTQ4OTczMzg1Mn0.lfoJ6zxUmVNE2AZ2nSY6fgoGEu6wN_xqemu3k1Z4XyQ' },
+  { electronicAddress: 'trump@gmail.com',
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2YWx1ZSI6InRydW1wQGdtYWlsLmNvbSIsImlhdCI6MTQ4OTczMzg1Mn0.Rw1dZsx4NIosZVpWFREQSg7Wz8C5i2_b15CrNrZjHNc' },
+  { electronicAddress: 'trump-president@gmail.com',
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2YWx1ZSI6InRydW1wLXByZXNpZGVudEBnbWFpbC5jb20iLCJpYXQiOjE0ODk3MzM4NTJ9.xZJAX35U2_5kL-LLSn2Jju6XGj9nqQ475TU4c7RgJd0' } ]
+```
+
+Well we have met our goal and refactored the imperative code to functional fashion. All the cycles, temporary variables and buffers are boiled down to a chain of functions which separates concerns to different logical blocks. Next time you look into this code you might omit the rest of the code except the main function `generateResponse`. This code will have less bugs as it avoids to keep state in variables and instead always produce a new value.
