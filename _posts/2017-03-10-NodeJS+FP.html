@@ -1,25 +1,25 @@
 ---
 layout: post
-title: "Implementing functional programming in data transformation tasks in NodeJS."
+title: "NodeJS functional programming in data transformation tasks."
 comments: true
 ---
 <p class="lead">
-  There is a common task in many software cases – get one list and transform it to another list. For example, implementing consesus protocol in a blockchain requires a function to receive an array of transaction and produce another list of transactions on which it agrees upon. In this article we will examine a case where we are given a data set with contacts of different people based on which we need to produce another list of related one time contact tokens to send to a client. We will see how to implement the case in <a href="https://www.ics.uci.edu/~pattis/ICS-31/lectures/functionsasdata/functionsasdata.txt">functional programming paradigm</a> which is easier to understand and reason about.
+  There is a common task in many software development cases – get one list and transform it to another list. For example, implementing consesus protocol in a blockchain requires a function that receives an array of transactions and produce another list of transactions which it considers correct. In this article we will examine a case where we are given a data set with contacts of people based on which we need to produce another list of related one time tokens to send to a client. As data transformation tasks tend to become intricated, implementation will be done in accordance to <a href="https://www.ics.uci.edu/~pattis/ICS-31/lectures/functionsasdata/functionsasdata.txt">functional programming paradigm</a> to make code simplier to understand and reason about.
 </p>
 
 Recently I had to carry out a refactoring of a JavaScript code which have been typical for many years:
 <script src="https://gist.github.com/yellowred/4b3333243f61619044cc5646f19b9e69.js"></script>
 
-So first of all it looks monolytic and it makes it hard to reason about. There are no logical steps and in order to find out what is goin on you need to execute the whole function in your mind. Loops can be pretty big so we have to put comments beside curly braces to identify where a loops ends.
-Basically what it does is loops through the data, collects unique emails and generates an array of tokens for them.
+First of all it looks monolytic, hard to comprehend, therefore wtf meter is overshooting. There are no logical steps and, in order to find out how it works, you need to execute the whole function in your mind. Loops can be pretty big so we have to put comments beside curly braces to identify where a loop ends.
+Basically what it does is loops through some data, collects unique emails and generates an array of tokens for them.
 We use the `yield` keyword to get a value from asynchronous functions before continue to execute the rest of a function.
 
-So lets fix these weaknesses converting our code to functional style. One of the traits of this is to make a value immutable which we will pass to a function which transforms it in some way and in turn pass it to another function and so on until we shape the required structure, in opposite to conventional approach where you assign a new value every loop.
+So lets fix these downsides converting our code to functional style. One of the traits of functional programming is to make a value immutable which is passed to a function which transforms it in some way and in turn pass to another function and so on until the required structure is shaped. It is the opposite to conventional approach where you assign a new value every loop.
 
 
 ## Eliminate loops
 
-Lets start from the part that I like the most – getting our code free of `for` statements.
+Lets start from the part that I like the most – getting our code free from `for` statements.
 <script src="https://gist.github.com/yellowred/e6fd692721db377ac650357d20e45653.js"></script>
 
 We get rid of the whole cycle and instead engage JavaScript function [map](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/map) (node.js [supports it](http://node.green/#ES2015-built-ins-typed-arrays--TypedArray--prototype-map) since v4) which will interate through an array and produce a new array where each element will be a result of the callback. This function is synchronous and will block the whole event loop. Keep this in mind and consider dividing into chunks large data sets.
