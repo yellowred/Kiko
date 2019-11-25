@@ -19,6 +19,7 @@ permalink: /homepage/
 
 
 <!-- TradingView Widget BEGIN -->
+<div style="height: 660px">
 <div class="tradingview-widget-container">
   <div class="tradingview-widget-container__widget"></div>
   <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com" rel="noopener" target="_blank"><span class="blue-text">Market Data</span></a> by TradingView</div>
@@ -165,5 +166,6 @@ permalink: /homepage/
   ]
 }
   </script>
+</div>
 </div>
 <!-- TradingView Widget END -->
