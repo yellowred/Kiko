@@ -1,0 +1,80 @@
+---
+layout: post
+title: "Pass By Value or Pass By Reference: Go and NodeJS."
+comments: true
+---
+<p class="lead">
+  Knowing how change of a function arguments affect the data outside of the function scope is essential in any programming 
+  language. Unfortunately there is a lot of confusion in how arguments are passed to a function even in so well documented 
+  languages like Java or Go, let alone NodeJS.
+</p>
+
+
+There are 3 types of passing variables to a function:
+- pass by value,
+- pass by pointer (pass by address),
+- pass by reference.
+
+
+
+### Pass By Value
+This is means the variable will be cloned and the result will be passed to the function. Modification of the result will not affect 
+the initial variable, so the function can change it's arguments without affecting data outside the function scope.
+
+Golang supports it by default. However there is a confusion that slices and maps are passed by pointer. They are structures with 
+a property that points to data. If code inside a function modifies the data, than the change will persist outside the function scope.
+But it is not possible to assing a new struct to these arguments, i.e. change slice size.
+
+<u>NodeJS pass all the arguments by value</u>. However when the argument is not a primitive, it stores pointers to it's internal 
+properties and changes of those properties will affect data outside the function scope.
+
+### Pass By Pointer
+Sometimes also called pass by address. The function will receive a pointer value that is address in memory where the data is stored. 
+Changing the argument inside the function will not affect the initial variable, but change of the value,
+to which that argument points, will be visible outside the function scope.
+
+Golang supports it if a symbol `*` added before type in function signature. Symbol `&` is used to get the address in memory of a 
+variable and so the function can affect data outside it's scope.
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	a := map[string]string{"fruit": "orange"}
+	b := map[string]string{"fruit": "grapes"}
+	fmt.Println(a, b)
+	swap(&a, &b)
+	fmt.Println(a, b)
+}
+
+func swap(a, b *map[string]string) {
+	t := *a
+	*a = *b
+	*b = t
+}
+```
+
+### Pass By Reference
+The function will receive the same variable as argument so that the argument becomes an alias to initial variable. 
+Therefore changing the argument directly affects the variable outside the function scope. There is a simple test for if this type 
+of passing variable to a function is allowed in a programming language: swap function. If it is possible to write a function that 
+swaps two variables that are passed to it, then pass by reference is allowed.
+```c
+void swapnum(int &i, int &j) {
+  int temp = i;
+  i = j;
+  j = temp;
+}
+```
+
+Neither Golang nor NodeJS support this and it is deemed unsafe technique to use.
+
+## References
+https://www.ibm.com/support/knowledgecenter/en/SSLTBW_2.3.0/com.ibm.zos.v2r3.cbclx01/cplr233.htm
+https://news.ycombinator.com/item?id=16233785
+https://softwareengineering.stackexchange.com/questions/388360/how-function-parameters-are-compiled-in-javascript
+https://ocw.mit.edu/courses/civil-and-environmental-engineering/1-124j-foundations-of-software-engineering-fall-2000/lecture-notes/object-_construction_and_destruction/
